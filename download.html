@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Statement</title>
+</head>
+<body>
+    <button id="downloadStatementBtn">Download Statement</button>
+
+    <script>
+        document.getElementById('downloadStatementBtn').addEventListener('click', function() {
+            // Make an AJAX request to download the statement
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/comms/download_transaction_statement', true);
+            xhr.responseType = 'blob';
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Create a Blob from the response
+                    var blob = new Blob([xhr.response], { type: 'application/pdf' });
+
+                    // Create a temporary link to trigger the download
+                    var link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = 'transaction_statement.pdf';
+                    link.click();
+                }
+            };
+
+            xhr.send();
+        });
+    </script>
+</body>
+</html>
+
+
+
+

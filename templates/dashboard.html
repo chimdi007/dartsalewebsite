@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dartsale web console</title>
+    <link rel="stylesheet" href="{{url_for('static', filename="styles.css")}}">
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <img
+          src="{{url_for('static', filename='logo.png')}}"
+          alt="Dartfox Logo"
+          class="logo"
+        />
+      </div>
+      <nav>
+        <div class="nav-links">
+            <a href="{{url_for('logout')}}">Logout</a>
+        </div>
+      </nav>
+      
+    </header>
+    <main>
+        <div class="page-nav">
+            <div class="dash-nav" onclick="homePage('dashpage1')">
+              <p>Shops</p>
+            </div>
+    
+            <div class="dash-nav" onclick="showDashpage('dashpage2')">
+              <p>Create New Shop</p>
+            </div>
+            <div class="dash-nav" onclick="showDashpage('dashpage3')">
+                <p>Account</p>
+            </div>
+        </div>
+        <div class="dashpage" id="dashpage1" style="display:block;">
+            <p>Shops (table)</p>
+            <div class="table-container">
+                <table id="shopTable">
+                    <thead>
+                        <tr>
+                        <th><u>Shop Name</u></th>
+                        <th><u>Shop Key</u></th>
+                        <th><u>Status</u></th>
+                        <th><u>Expiry</u></th>
+                        <th><u>Password</u></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shop in shops %}
+                        <tr>
+                        <td>{{ shop.shop_name }}</td>
+                        <td>{{ shop.shop_key }}</td>
+                        <td>{{ shop.status }}</td>
+                        <td>{{ shop.expiry }}</td>
+                        <td>{{ shop.shop_password }}</td>
+                        <td>
+                            <form action="/manage_shop" method='POST'>
+                                <input type="hidden" value="{{shop.shop_name}}" name="shop_name">
+                                <input type="hidden" value="{{shop.shop_key}}" name="shop_key">
+                                <input type="hidden" value="{{shop.shop_password}}" name="shop_password">
+                            <button type="submit">Manage shop</button>
+                            </form>
+                        </td>
+                        </tr>
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="dashpage" id="dashpage2" style="display:none;">
+            <form id="newShopForm" onsubmit="createNewShop(event)">
+                <p>Create New Shop</p>
+                <input type="hidden" id="clientEmail" value="{{ client.email }}" name="email" required>
+                <input type="hidden" id="clientUniqueID" value="{{ client.unique_id }}" name="unique_id" required>
+                
+                <label for="newShopName">Shop Name:</label>
+                <input type="text" id="newShopName" name="newShopName" required><br><br>
+                
+                <label for="newShopPassword">Shop Password:</label>
+                <input type="text" id="newShopPassword" name="newShopPassword" required><br><br>
+                
+                <label for="subscription">Subscription:</label>
+                <select id="subscription" name="subscription">
+                    <option value="365">1 year (at $1.5 per month)</option>
+                    <option value="183">6 months (at $1.99 per month)</option>
+                </select><br><br>
+                
+                <label for="promoCode">Promo Code (optional):</label>
+                <input type="text" id="promoCode" placeholder="PROMO CODE"><br><br>
+                
+                <button type="submit">Create New Shop</button>
+            </form>
+            
+        </div>
+        <div class="dashpage" id="dashpage3" style="display:none;">
+            <p>Account</p>
+            <fieldset> 
+                <legend>User Information</legend>
+                <h2><b>User:</b> <u>{{client.name}}</u></h2>
+            </fieldset>
+            
+            <br />
+            
+            <fieldset>
+                <p><b>Email:</b> <u>{{client.email}} ({{client.verification_status}})</u></p>
+            </fieldset>
+            
+            <br />
+            
+            <fieldset>
+                <p><b>Unique ID:</b> <u>{{client.unique_id}}</u></p>
+            </fieldset>
+            
+              
+              <br />
+              <fieldset>
+                <p id="cpw">Change password [x]</p>
+                <div id="resetForm" style="display:none">
+                    <form>
+                        <label for="op">Old password: </label>
+                        <input type="password" id="op" name="oldPassword" required><br><br>
+                        <label for="np">New password: </label>
+                        <input type="password" id="np" name="newPassword" required>
+                        <button type="button" onclick="changePassword()">Change Password</button>
+                    </form>
+                </div>
+            </fieldset>
+        </div>
+    </main>
+    <footer><p>&copy; 2024 Dartfox.org. All rights reserved.</p></footer>
+    <script src="{{url_for('static', filename="script.js")}}"></script>
+  </body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dartsale web console</title>
+    <link rel="stylesheet" href="{{url_for('static', filename="styles.css")}}">
+  </head>
+  <body>
+    <header></header>
+    <div class="page">
+      <div class="container">
+        <h1>Welcome to DartFox</h1>
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn">Sign Up</button>
+      </div>
+
+      <!-- Login Popup -->
+      <div id="loginPopup" class="popup">
+        <div class="popup-content">
+          <span class="close" onclick="closePopup('loginPopup')">&times;</span>
+          <form id="loginForm" action="/login" method="POST">
+            <h2>Login</h2>
+            <input type="text" placeholder="Email" name="email" required />
+            <input
+              type="password"
+              placeholder="Password"
+              name="password"
+              id="password"
+              required
+            />
+            <i
+              class="fas fa-eye"
+              onclick="togglePasswordVisibility('password')"
+            ></i>
+            <!-- Toggle password visibility -->
+            <button type="submit">Login</button>
+            <p><a href="#" onclick="openResetPopup()">Forgot Password?</a></p>
+            <!-- Password reset option -->
+          </form>
+        </div>
+      </div>
+
+      <!-- Sign Up Popup -->
+      <div id="signupPopup" class="popup">
+        <div class="popup-content">
+          <span class="close" onclick="closePopup('signupPopup')">&times;</span>
+          <form id="signupForm" action="/signup" method="POST">
+            <h2>Sign Up</h2>
+            <input type="text" placeholder="Name" name="name" required />
+            <input type="email" placeholder="Email" name="email" required />
+            <input
+              type="password"
+              placeholder="Password"
+              name="password"
+              id="signupPassword"
+              required
+            />
+            <i
+              class="fas fa-eye"
+              onclick="togglePasswordVisibility('signupPassword')"
+            ></i>
+            <!-- Toggle password visibility -->
+            <button type="submit">Sign Up</button>
+          </form>
+        </div>
+      </div>
+      <!-- Reset Password Popup -->
+      <div id="resetPopup" class="popup">
+        <div class="popup-content">
+          <span class="close" onclick="closePopup('resetPopup')">&times;</span>
+          <form id="resetForm" action="/forgot_password" method="POST">
+            <h2>Reset Password</h2>
+            <input type="email" placeholder="Email" name="email" required />
+            <button type="submit">Reset Password</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <footer><p>&copy; 2024 Dartfox.org. All rights reserved.</p></footer>
+  </body>
+  <script>
+    function togglePasswordVisibility(fieldId) {
+      var passwordField = document.getElementById(fieldId);
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+      } else {
+        passwordField.type = "password";
+      }
+    }
+
+    function openResetPopup() {
+      document.getElementById("resetPopup").style.display = "block";
+      document.getElementById("loginPopup").style.display = "none";
+    }
+
+    function closePopup(popupId) {
+      document.getElementById(popupId).style.display = "none";
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", function () {
+      document.getElementById("loginPopup").style.display = "block";
+    });
+
+    document.getElementById("signupBtn").addEventListener("click", function () {
+      document.getElementById("signupPopup").style.display = "block";
+    });
+  </script>
+</html>

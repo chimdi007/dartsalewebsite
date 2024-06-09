@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dartsale web console</title>
+    <link rel="stylesheet" href="{{url_for('static', filename="styles.css")}}">
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <img
+          src="{{url_for('static', filename='logo.png')}}"
+          alt="Dartfox Logo"
+          class="logo"
+        />
+      </div>
+      <nav>
+        <div class="nav-links">
+          <a href="{{url_for('dashboard')}}">Back to dashboard</a>
+        </div>
+        <div class="nav-links" onclick="refreshPages('shop-page1')">
+          <a>Refresh Page</a>
+        </div>
+        <div class="nav-links" onclick="invPages('shop-page2')">
+          <a>Shop settings</a>
+        </div>
+        <div class="nav-links" onclick="invPages('shop-page3')">
+          <a>Manage Access</a>
+        </div>
+        <div class="nav-links" onclick="invPages('shop-page4')">
+          <a>Print Statement</a>
+        </div>
+        <div class="nav-links" onclick="invPages('shop-page5')">
+          <a>Activity Log</a>
+        </div>
+      </nav>
+    </header>
+    <main>
+      <div class="shop-page" id="shop-page1" style="display:block">
+        <h2 style="font-size: 1.5rem; color: green; text-decoration: underline; f">{{ config.shop_name }} </h2>
+      <div id="inv-top">
+        <div style="margin: 10px; width: 20%">
+          <div class="inv-button" onclick="openInvForm()">
+            <p>NEW ITEM/SERVICE</p>
+          </div>
+          <br /><br />
+          <div>
+            <input type="text" id="remove-stock" name="sku" />
+            <button onclick="removeStock('remove-stock')" style="margin-left:0;">Remove Stock</button>
+          </div>
+          <div id="invForm-container">
+            <h2>Add New Item To Inventory</h2>
+            <form id="invForm" onsubmit="addStock(event)">
+              <label for="inv-item">Item Name:</label><br />
+              <input
+                type="text"
+                id="inv-item"
+                name="item"
+                required
+              /><br /><br />
+
+              <label for="inv-description">Description:</label><br />
+              <textarea
+                style="width: 90%; height: 3rem"
+                id="inv-description"
+                name="description"
+                required
+              ></textarea
+              ><br /><br />
+
+              <label for="inv-sku">SKU:</label><br />
+              <input
+                type="text"
+                id="inv-sku"
+                name="sku"
+                required
+              /><br /><br />
+
+              <label for="inv-upc">UPC/EAN:</label><br />
+              <input
+                type="text"
+                value=""
+                id="inv-upc"
+                name="upc"
+                required
+              /><br /><br />
+
+              <label for="inv-quantity">Quantity:</label><br />
+              <input
+                min="0"
+                type="number"
+                id="inv-quantity"
+                name="quantity"
+                required
+              /><br /><br />
+
+              <label for="inv-price">Price:</label><br />
+              <input
+                type="number"
+                step="0.01"
+                id="inv-price"
+                name="price"
+                required
+              /><br /><br />
+
+              <button onclick="addStock()">Add Item</button>
+              <button type="button" onclick="closeInvForm()">Cancel</button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <h2><u>Stats</u></h2>
+        </div>
+      </div>
+      <div id="inv-bottom">
+        <div class="table-container">
+          <table id="inventoryTable">
+            <thead>
+              <tr>
+                <th>ITEM</th>
+                <th>SKU</th>
+                <th>UPC/EAN</th>
+                <th>DESCRIPTION</th>
+                <th>STOCK</th>
+                <th>PRICE ({{currency}})</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- inventory -->
+              {% for i in inventory %}
+              <tr>
+                <td id="item-{{i.sku}}">{{i.item}}</td>
+                <td id="sku-{{i.sku}}">{{i.sku}}</td>
+                <td id="upc-{{i.sku}}">{{i.upc}}</td>
+                <td id="desc-{{i.sku}}">{{i.description}}</td>
+                <td>
+                  <input type="number" placeholder="{{i.quantity}}" id="qty-{{i.sku}}" required>
+                </td>
+                <td>
+                  <input type="text" value="{{i.price}}" id="prc-{{i.sku}}" required/>
+                </td>
+                <td>
+                  <button
+                    class="button"
+                    onclick="updateInventory('item-{{i.sku}}', 'sku-{{i.sku}}', 'upc-{{i.sku}}', 'desc-{{i.sku}}', 'qty-{{i.sku}}', 'prc-{{i.sku}}')"
+                  >
+                    Update
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="shop-page" id="shop-page2" style="display:none">
+      <h2>Shop Settings</h2>
+          <form id="shop-settings">
+            <label for="shop_name">SHOP NAME: </label>
+            <input
+                type="text"
+                id="shop_name"
+                name="shop_name"
+                value="{{config.shop_name}}"
+                readonly
+            /><br /><br />
+
+            <input type="hidden" id="unique_id" value="{{config.user_unique_id}}" name="user_unique_id">
+    
+            <label for="shop_key">SHOP KEY: </label>
+            <input
+                type="text"
+                id="shop_key"
+                name="shop_key"
+                value="{{config.shop_key}}"
+                readonly
+            /><br /><br />
+
+            <label for="last_backup">LAST BACKUP: </label>
+            <input
+                type="text"
+                id="last_backup"
+                name="last_backup"
+                value="{{config.last_backup}}"
+                readonly
+            /><br /><br />
+
+            <label for="shop_password">SHOP PASSWORD: </label>
+            <input
+                type="text"
+                id="shop_password"
+                name="shop_password"
+                value="{{config.shop_password}}"
+                required
+            /><br /><br />
+    
+            <label for="vat">VAT: </label>
+            <input
+                type="number"
+                id="vat"
+                name="vat"
+                step="0.1"
+                min="0"
+                value="{{config.vat}}"
+                required
+            /><br /><br />
+    
+            <label for="currency">Currency: </label>
+            <select id="currency" name="currency" value="{{ currency }}" required>
+                <option>{{config.currency}}</option>
+                <option value="₦">NGN (₦)</option>
+                <option value="$">USD ($)</option>
+                <option value="£">GBP (£)</option>
+            </select><br /><br />
+
+            <button class="button">Save</button>
+        </form>
+    </div>
+    <div class="shop-page" id="shop-page3" style="display:none">
+      <h2>Manage Access</h2>
+      <fieldset >
+        <legend>New user:</legend>
+        <form id="create-user-form">
+          <input type="hidden" id="new-user_unique_id" name="user_unique_id" value="{{config.user_unique_id}}" required>
+          <input type="hidden" id="new-shop_key" name="shop_key" value="{{config.shop_key}}" required>
+          <input type="hidden" id="new-shop_password" name="shop_password" value="{{config.shop_password}}" required>
+          <input type="hidden" id="new-shop_name" name="shop_name" value="{{config.shop_name}}" required>
+          <label for="name">Name (required): </label>
+          <input type="text" id="name" name="name" required />
+          <br /><br />
+          <label for="username">Username (required): </label>
+          <input type="text" id="username" name="username" required />
+          <br /><br />
+          <label for="access_level">Access Level (required):</label>
+          <select id="access_level" name="access_level">
+              <option value="cashier">Cashier (no access to inventory)</option>
+              <option value="admin">Admin/Manager (access to inventory)</option>
+          </select>
+          <br /><br />
+          <label for="password">Password (required): </label>
+          <input type="text" id="password" name="password" required />
+          <br /><br />
+          <button type="submit" class="button">Create new User</button>
+      </form>
+      <p id="message"></p> <!-- Element to display messages -->
+      
+      <div id="message"></div>
+    </fieldset>
+    <div id="users" style="height:34vh; display: block">
+      <table id="usersTable">
+        <tr>
+            <th><u>Users</u></th>
+            <th><u>Access level</u></th>
+            <th><u>Creation date</u></th>
+        </tr>
+        {% for user in users %}
+        <tr id="row-{{ user.username }}">
+            <td><p>{{ user.name }} ({{ user.username }})</p></td>
+            <td>{{ user.access_level }}</td>
+            <td>{{ user.staff_date }}</td>
+            <td><button onclick="deleteUser('{{config.user_unique_id}}', '{{config.shop_key}}', '{{config.shop_password}}', '{{user.name}}', '{{ user.username }}')">Delete User</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    </div>
+    <div class="shop-page" id="shop-page4" style="display:none">
+      <h2>Print Statement for <b style="color:green;"><u>{{config.shop_name}}</u></b></h2>
+      <form id="statementForm">
+        <input type="hidden" name="user_unique_id" value="{{config.user_unique_id}}" required>
+        <input type="hidden" name="shop_key" value="{{config.shop_key}}" required>
+        <input type="hidden" name="shop_name" value="{{ config.shop_name }}" required>
+        <input type="hidden" name="currency" value="{{ config.currency }}" required>
+        <labe for="startdate">Start date:</label>
+        <input type="date" id="startdate"name="startdate" required><br><br>
+
+        <labe for="enddate">End date:</label>
+          <input type="date" id="enddate"name="enddate" required><br><br>
+
+        <button class="button">Download statement</button>
+      </form>
+    </div>
+    <div class="shop-page" id="shop-page5" style="display:none">
+      <h2>Activity Log</h2>
+      <div class="table-container">
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th>DATE</th>
+              <th>ACTIVITY</th>
+              <th>SKU</th>
+              <th>ITEM</th>
+              <th>QTY</th>
+              <th>PRICE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- inventory -->
+            {% for l in logs %}
+            <tr>
+              <td>{{l.date}}</td>
+              <td>{{l.activity}}</td>
+              <td>{{l.sku}}</td>
+              <td>{{l.item}}</td>
+              <td>{{l.quantity}}</td>
+              <td>{{l.price}}</td>
+              <td>{{l.status}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </main>
+    <footer><p>&copy; 2024 Dartfox.org. All rights reserved.</p></footer>
+    <script src="{{url_for('static', filename="script.js")}}"></script>
+    <script>
+      function deleteUser(userUniqueId, shopKey, shopPassword, userName, userUsername) {
+        // Show a confirmation prompt to the user
+        let confirmation = confirm(`Are you sure you want to delete user ${userName} (${userUsername})?`);
+        
+        if (confirmation) {
+            // Create the payload to send to the backend
+            let payload = {
+                user_unique_id: userUniqueId,
+                shop_key: shopKey,
+                shop_password: shopPassword,
+                name: userName,
+                username: userUsername
+            };
+    
+            // Send a POST request to the backend endpoint
+            fetch('/delete_user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User deleted successfully.');
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting user.');
+            });
+        } else {
+            // User canceled the deletion
+            alert('User deletion canceled.');
+        }
+    }
+
+
+
+      function removeStock(inputID) {
+        let sku = document.getElementById(inputID).value;
+        let user_unique_id = document.getElementById('unique_id').value;
+        let shop_key = document.getElementById('shop_key').value;
+        let shop_password = document.getElementById('shop_password').value;
+        if (!sku) {
+            alert("Please enter a SKU to remove.");
+            return;
+        }
+        let confirmed = confirm("This action is irreversible! Do you want to proceed?");
+        if (confirmed){
+        let payload = {
+            sku: sku,
+            user_unique_id: user_unique_id,
+            shop_key: shop_key,
+            shop_password: shop_password
+        };
+        fetch('/remove_stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Stock removed successfully.');
+            } else {
+                alert('Failed to remove stock: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while removing stock.');
+        });}
+    }
+
+
+
+      function updateInventory(itemID, skuID, upcID, descID, qtyID, prcID) {
+        let user_unique_id = document.getElementById('unique_id').value;
+        let shop_key = document.getElementById('shop_key').value;
+        let item = document.getElementById(itemID).textContent;
+        let sku = document.getElementById(skuID).textContent;
+        let upc = document.getElementById(upcID).textContent;
+        let description = document.getElementById(descID).textContent;
+        let quantity = document.getElementById(qtyID).value;
+        let price = document.getElementById(prcID).value;
+        let action = 'update';
+
+        // Create the payload to send to the backend
+        let payload = {
+            item: item,
+            sku: sku,
+            upc: upc,
+            description: description,
+            quantity: quantity,
+            price: price,
+            user_unique_id: user_unique_id,
+            shop_key: shop_key,
+            action: action
+        };
+
+        // Send a POST request to the backend endpoint
+        fetch('/update_stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Inventory updated successfully.');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating inventory.');
+        });
+    }
+
+
+      document.getElementById('statementForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the form from submitting normally
+    
+        // Get form data
+        var formData = new FormData(this);
+    
+        // Construct the URL with form data
+        var url = '/comms/download_transaction_statement?' + new URLSearchParams(formData).toString();
+    
+        // Make an AJAX request to download the statement
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'blob';
+    
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Create a Blob from the response
+                var blob = new Blob([xhr.response], { type: 'application/pdf' });
+    
+                // Create a temporary link to trigger the download
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = 'transaction_statement.pdf';
+                link.click();
+            }
+        };
+    
+        xhr.send();
+    });
+    
+
+
+
+
+      function addStock(event) {
+        event.preventDefault(); // Use a semicolon here
+    
+        let user_unique_id = document.getElementById('unique_id').value;
+        let shop_key = document.getElementById('shop_key').value;
+        let shop_name = document.getElementById('shop_name').value;
+        let shop_password = document.getElementById('shop_password').value;
+        let item = document.getElementById('inv-item').value;
+        let description = document.getElementById('inv-description').value;
+        let sku = document.getElementById('inv-sku').value;
+        let upc = document.getElementById('inv-upc').value;
+        let price = document.getElementById('inv-price').value;
+        let quantity = document.getElementById('inv-quantity').value;
+        let action = 'add';
+        let url = '/update_stock';
+        
+        let data = {
+            item: item,
+            description: description,
+            sku: sku,
+            upc: upc,
+            price: price,
+            quantity: quantity,
+            user_unique_id: user_unique_id,
+            shop_key: shop_key,
+            action: action
+            //shop_password: shop_password
+            //shop_name: shop_name
+        };
+    
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        })
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+    
+      function invPages(pageId){
+        document.querySelectorAll(".shop-page").forEach((page) => {
+          page.style.display = "none";
+        });
+        document.getElementById(pageId).style.display = "block";
+      }
+
+
+
+      function refreshPages(pageId){
+        document.querySelectorAll(".shop-page").forEach((page) => {
+          page.style.display = "none";
+        });
+        document.getElementById(pageId).style.display = "block";
+        location.reload();
+      }
+
+
+      document.getElementById('create-user-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+    
+        let name = document.getElementById('name').value;
+        let username = document.getElementById('username').value;
+        let accessLevel = document.getElementById('access_level').value;
+        let password = document.getElementById('password').value;
+        let user_unique_id = document.getElementById('new-user_unique_id').value;
+        let shop_key = document.getElementById('new-shop_key').value;
+        let shop_password = document.getElementById('new-shop_password').value;
+        let shop_name = document.getElementById('new-shop_name').value;
+    
+        let data = {
+            name: name,
+            username: username,
+            access_level: accessLevel,
+            password: password,
+            user_unique_id: user_unique_id,
+            shop_key: shop_key,
+            shop_password: shop_password,
+            shop_name: shop_name
+        };
+    
+        fetch('/create_new_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                alert(data.message);
+                location.reload();
+            } else {
+                document.getElementById('message').textContent = data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('message').textContent = 'An error occurred. Please try again later.';
+        });
+    });
+    
+
+    document
+        .getElementById("shop-settings")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // Prevent the default form submission
+
+          // Get the form data
+          const formData = new FormData(event.target);
+
+          // Convert the form data to an object
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+
+          // Send the form data to the server using fetch
+          fetch("/shop_settings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              }
+              throw new Error("Network response was not ok.");
+            })
+            .then((data) => {
+              alert(data.message);
+            })
+            .catch((error) => {
+              console.error(
+                "There was a problem with the fetch operation:",
+                error
+              );
+              alert("There was an error submitting the report.");
+            });
+        });
+    </script>
+  </body>
+</html>
