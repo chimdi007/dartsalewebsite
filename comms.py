@@ -9,6 +9,7 @@ from datetime import datetime
 comms_bp = Blueprint('comms', __name__)
 
 currency = ""
+shop_name = ""
 
 def config_db():
         connection = mysql.connector.connect(
@@ -29,7 +30,7 @@ class Statement(FPDF):
 
     def header(self):
         self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'Transaction Statement', 0, 1, 'C')
+        self.cell(0, 10, f'Transaction Statement for {shop_name}', 0, 1, 'C')
 
     def footer(self):
         self.set_y(-15)
@@ -37,6 +38,7 @@ class Statement(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
     def create_pdf(self):
+        global currency
         try:
             headers = ['Date', 'Receipt Number', 'Attendant', 'Transaction Type', 'Price', 'VAT', 'Total']
             col_widths = [30, 40, 40, 40, 30, 30, 30]
@@ -59,9 +61,9 @@ class Statement(FPDF):
                 self.cell(col_widths[1], 10, transaction['receipt_number'], 1)
                 self.cell(col_widths[2], 10, transaction['attendant'], 1)
                 self.cell(col_widths[3], 10, transaction['transaction_type'], 1)
-                self.cell(col_widths[4], 10, f"${transaction['price']:.2f}", 1)
-                self.cell(col_widths[5], 10, f"${transaction['vat']:.2f}", 1)
-                self.cell(col_widths[6], 10, f"${transaction['total']:.2f}", 1)
+                self.cell(col_widths[4], 10, f"{currency}{transaction['price']:.2f}", 1)
+                self.cell(col_widths[5], 10, f"{currency}{transaction['vat']:.2f}", 1)
+                self.cell(col_widths[6], 10, f"{currency}{transaction['total']:.2f}", 1)
                 self.ln()
                 
                 # Update sums
@@ -71,9 +73,9 @@ class Statement(FPDF):
                 
             self.set_font('Arial', 'B', 10)
             self.cell(sum(col_widths[:4]), 10, 'Total', 1, align='R')
-            self.cell(col_widths[4], 10, f"${total_price:.2f}", 1)
-            self.cell(col_widths[5], 10, f"${total_vat:.2f}", 1)
-            self.cell(col_widths[6], 10, f"${total_overall:.2f}", 1)
+            self.cell(col_widths[4], 10, f"{currency}{total_price:.2f}", 1)
+            self.cell(col_widths[5], 10, f"{currency}{total_vat:.2f}", 1)
+            self.cell(col_widths[6], 10, f"{currency}{total_overall:.2f}", 1)
             self.ln()
         except Exception as e:
             print(f"Error during PDF creation: {e}")
@@ -96,7 +98,7 @@ class Statement(FPDF):
 
 @comms_bp.route('/download_transaction_statement', methods=['GET'])
 def download_transaction_statement():
-    global currency
+    global currency, shop_name
     try:
         user_unique_id = request.args.get('user_unique_id')
         shop_key = request.args.get('shop_key')
@@ -107,27 +109,30 @@ def download_transaction_statement():
         startdate = datetime.strptime(startdate_str, '%Y-%m-%d %H:%M')
         enddate = datetime.strptime(enddate_str, '%Y-%m-%d %H:%M')
         
-        print("ID:", user_unique_id, shop_key, shop_name)
-        print("DATES: ", startdate, enddate)
-        print ("Currency: ", currency)
+        #print("ID:", user_unique_id, shop_key, shop_name)
+        #print("DATES: ", startdate, enddate)
+        #print ("Currency: ", currency)
 
         # Establish the database connection
         connection = config_db()
         cursor = connection.cursor()
-        cursor.execute("SELECT date, receipt_number, attendant, transaction_type FROM sales WHERE user_unique_id=%s AND shop_key=%s AND date>=%s AND date<=%s", (user_unique_id, shop_key, startdate, enddate))
+        cursor.execute("SELECT date, receipt_number, attendant, transaction_type, price, vat, total FROM sales WHERE user_unique_id=%s AND shop_key=%s AND date>=%s AND date<=%s", (user_unique_id, shop_key, startdate, enddate))
         data = cursor.fetchall()
 
         transactions = []
         if data:
             for row in data:
+                price = float(row[4])
+                vat = float(row[5])
+                total = float(row[6])
                 transactions.append({
                     'date': row[0].strftime('%Y-%m-%d %H:%M'),   # Assuming the first column is the date
                     'receipt_number': row[1],  # Assuming the second column is the receipt number
                     'attendant': row[2],  # Assuming the third column is the attendant
                     'transaction_type': row[3],  # Assuming the fourth column is the transaction type
-                    'price': 100.0,
-                    'vat': 5.0,
-                    'total': 105.0
+                    'price': price,
+                    'vat': vat,
+                    'total': total
                 })
         else:
             return jsonify(message="No records found!")
