@@ -16,7 +16,7 @@ body {
 header {
     padding: 20px;
     border-radius: 5px;
-    display: flex;
+    display: block;
     flex-direction: horizontal;
     text-align: center;
     justify-content: space-between;
@@ -84,8 +84,8 @@ main {
   .nav-links{
     padding:10px;
     margin: 10px;
-    width: 10%;
-    height: 1rem;
+    width: 7%;
+    height: 2rem;
     background-color: rgb(28, 107, 226);
     border: 1px solid black;
     justify-content: center;

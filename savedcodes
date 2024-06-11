@@ -1,200 +1,36 @@
-from flask import Flask, Blueprint, send_file, request, jsonify
-from fpdf import FPDF
-from io import BytesIO
-import mysql.connector
-from datetime import datetime
-
-
-# Define the Blueprint
-comms_bp = Blueprint('comms', __name__)
-
-def config_db():
-        connection = mysql.connector.connect(
-            host='192.168.1.100',
-            user='dartboss',
-            password='Blackcat111@',
-            database='dartsale'
-        )
-        return connection
-
-class Statement(FPDF):
-    def __init__(self, transactions):
-        super().__init__('L', 'mm', 'A4')
-        self.transactions = transactions
-        self.add_page()
-        self.set_font('Arial', 'B', 12)
-        self.create_pdf()
-
-    def header(self):
-        self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'Transaction Statement', 0, 1, 'C')
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-
-    def create_pdf(self):
-        headers = ['Date', 'Receipt Number', 'Attendant', 'Transaction Type', 'Price', 'VAT', 'Total']
-        col_widths = [30, 40, 40, 40, 30, 30, 30]
-
-        self.set_font('Arial', 'B', 10)
-        for header, col_width in zip(headers, col_widths):
-            self.cell(col_width, 10, header, 1)
-        self.ln()
-
-        self.set_font('Arial', '', 10)
-        for transaction in self.transactions:
-            self.cell(col_widths[0], 10, transaction['date'], 1)
-            self.cell(col_widths[1], 10, transaction['receipt_number'], 1)
-            self.cell(col_widths[2], 10, transaction['attendant'], 1)
-            self.cell(col_widths[3], 10, transaction['transaction_type'], 1)
-            self.cell(col_widths[4], 10, f"${transaction['price']:.2f}", 1)
-            self.cell(col_widths[5], 10, f"${transaction['vat']:.2f}", 1)
-            self.cell(col_widths[6], 10, f"${transaction['total']:.2f}", 1)
-            self.ln()
-
-    def get_pdf(self):
-        pdf_output = BytesIO()
-        self.output(pdf_output, dest='S')
-        pdf_output.seek(0)
-        return pdf_output
-
-
-
-
-
-@comms_bp.route('/download_transaction_statement', methods=['GET'])
-def download_transaction_statement():
-    try:
-        user_unique_id = request.args.get('user_unique_id')
-        shop_key = request.args.get('shop_key')
-        shop_name = request.args.get('shop_name')
-        startdate_str = request.args.get('startdate') + ' 00:00'
-        enddate_str = request.args.get('enddate') + ' 00:00'
-        startdate = datetime.strptime(startdate_str, '%Y-%m-%d %H:%M')
-        enddate = datetime.strptime(enddate_str, '%Y-%m-%d %H:%M')
-        
-        print("ID:", user_unique_id, shop_key, shop_name)
-        print("DATES: ", startdate, enddate)
-        transactions = []
-        connection = config_db
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM sales WHERE user_unique_id=%s AND shop_key=%s AND date>=%s AND date<=%s", (user_unique_id, shop_key, startdate, enddate))
-        data = cursor.fetchall()
-        print("DATA: ", data)
-        transactions = []
-        if data:
-            for i in data:
-                transactions.append({
-                    'date': i['date'],
-                    'receipt_number': i['receipt_number'],
-                    'attendant': i['attendant'],
-                    'transaction_type': i['transaction_type'],
-                    'price': 100.0,
-                    'vat': 5.0,
-                    'total': 105.0
-                })
-        else:
-            return jsonify(message="No records found!")
-        print("Transactions: ",transactions)
-        statement = Statement(transactions)
-        pdf_output = statement.get_pdf()
-        return send_file(pdf_output, download_name='transaction_statement.pdf', as_attachment=True)
-    except Exception as e:
-        print("Error: ", str(e))
-        return jsonify(message=f"Error: {str(e)}"), 500
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def download_transaction_statement2():
-    transactions = [
-        {
-            'date': '2024-06-08',
-            'receipt_number': '12345',
-            'attendant': 'John Doe',
-            'transaction_type': 'Credit',
-            'price': 100.0,
-            'vat': 5.0,
-            'total': 105.0
-        },
-        {
-            'date': '2024-06-09',
-            'receipt_number': '12346',
-            'attendant': 'Jane Doe',
-            'transaction_type': 'Debit',
-            'price': 50.0,
-            'vat': 2.5,
-            'total': 52.5
-        }
-    ]
-
-    statement = Statement(transactions)
-    pdf_output = statement.get_pdf()
-    return send_file(pdf_output, download_name='transaction_statement.pdf', as_attachment=True)
-
-
-
-
-
-@app.route('/remove_stock', methods=['POST'])
-def remove_stock():
+@app.route('/report_expenditure', methods=['POST'])
+def report_expenditure():
     try:
         data = request.get_json()
-        sku = data.get('sku')
+        print ("DATA: ", data)
         user_unique_id = data.get('user_unique_id')
         shop_key = data.get('shop_key')
-        shop_password = data.get('shop_password')
-        status = 'pending'
-        action = 'remove'
-        
-        if not sku or not user_unique_id or not shop_key:
-            return jsonify(message="sku missing"), 400
-        
+        attendant = data.get('reporter')
+        location = data.get('location')
+        category = data.get('category')
+        description = data.get('description')
+        price = data.get('amount')
+        items = {"description": description, "category": category, "location": location, "price": price}
+        receipt_number =111
+        transaction_type = 'debit'
+        vat = 0.0
+        date = datetime.now().strftime('%Y-%m-%d %H:%M')
         connection = config_db()
-        cursor = connection.cursor()
-        cursor.execute("SELECT 1 FROM shops WHERE user_unique_id = %s AND shop_key = %s AND shop_password = %s", (user_unique_id, shop_key, shop_password))
-        authenticated = cursor.fetchone()
-        if authenticated:
-            cursor.execute("SELECT item, description, sku, upc, price, quantity FROM inventory WHERE user_unique_id=%s AND shop_key=%s", (user_unique_id, shop_key))
-            stock = cursor.fetchone()
-            if stock:
-                item = stock[0]
-                description = stock[1]
-                sku = stock[2]
-                upc = stock[3]
-                price = float(stock[4])
-                quantity = int(stock[5])
-                cursor.execute("""INSERT INTO inv_sync(user_unique_id, shop_key, item, description, sku, upc, price, quantity, status, action)
-                            VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (user_unique_id, shop_key, item, description, sku, upc, price, quantity, status, action))
-                return jsonify(message="Item removal in progresss."), 200
-            else:
-                return jsonify(message="Item does not exist in your inventory!"),400
-            
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT 1 FROM shops WHERE user_unique_id=%s AND shop_key=%s", (user_unique_id, shop_key))
+        user = cursor.fetchone()
+        if user:
+            cursor.execute("""INSERT INTO sales (user_unique_id, shop_key, receipt_number, date, items, transaction_type, attendant, price, vat, total)
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                               (user_unique_id, shop_key, receipt_number, date, items, transaction_type, attendant, price, vat, price))
+            connection.commit()
         else:
-            return jsonify(message="Unauthorize user!"), 401
-    
+            return jsonify(message="Invalid user or shop details"), 400
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify(message="Expenditure recorded"), 200
     except Exception as e:
-        print(str(e))
+        print(f"Error: {e}")
         return jsonify(message=f"{str(e)}"), 500

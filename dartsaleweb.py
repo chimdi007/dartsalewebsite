@@ -21,7 +21,7 @@ def install_dependencies():
 
 
 #IMPORTS##########################################################################################
-from flask import Flask, request, url_for, render_template, redirect, flash, session, jsonify, make_response
+from flask import Flask, request, url_for, render_template, redirect, flash, session, jsonify, make_response, json
 import jwt
 import os
 import mysql.connector
@@ -539,6 +539,7 @@ def shop_settings():
 
 @app.route('/manage_shop', methods=['POST'])
 def manage_shop():
+    global client
     if 'unique_id' in session and request.method == 'POST':
         inventory = []
         users = []
@@ -649,7 +650,7 @@ def manage_shop():
                     'price':price,
                     'status':status
                 })
-            return render_template('manageshop.html', config=config, users=users, inventory=inventory, logs=logs)
+            return render_template('manageshop.html', config=config, users=users, inventory=inventory, client=client, logs=logs)
         else:
             return f"details does not match our records!", 400
             
@@ -817,6 +818,44 @@ def remove_stock():
         connection.close()
 #_______________________________________________________________________
     
+    
+#________________________RECORD EXPENSES__________________________
+@app.route('/report_expenditure', methods=['POST'])
+def report_expenditure():
+    try:
+        data = request.get_json()
+        #print ("DATA: ", data)      #debug print
+        user_unique_id = data.get('user_unique_id')
+        shop_key = data.get('shop_key')
+        attendant = data.get('reporter')
+        location = data.get('location')
+        category = data.get('category')
+        description = data.get('description')
+        price = data.get('amount')
+        items = json.dumps([{"description": description, "category": category, "location": location, "price": price}])
+        receipt_number =111
+        transaction_type = 'debit'
+        vat = 0.0
+        date = datetime.now().strftime('%Y-%m-%d %H:%M')
+        connection = config_db()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT 1 FROM shops WHERE user_unique_id=%s AND shop_key=%s", (user_unique_id, shop_key))
+        user = cursor.fetchone()
+        if user:
+            cursor.execute("""INSERT INTO sales (user_unique_id, shop_key, receipt_number, date, items, transaction_type, attendant, price, vat, total)
+                                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                               (user_unique_id, shop_key, receipt_number, date, items, transaction_type, attendant, price, vat, price))
+            connection.commit()
+        else:
+            return jsonify(message="Invalid user or shop details"), 400
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify(message="Expenditure recorded"), 200
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify(message=f"{str(e)}"), 500
 
 
 if __name__ == '__main__':

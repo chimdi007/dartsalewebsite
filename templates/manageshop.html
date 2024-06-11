@@ -34,11 +34,14 @@
         <div class="nav-links" onclick="invPages('shop-page5')">
           <a>Activity Log</a>
         </div>
-      </nav>
+        <div class="nav-links" onclick="invPages('shop-page6')">
+          <a>Record expenses</a>
+        </div>
+      </nav><br><br>
+      <h1 style="font-size: 1.5rem; color: white; text-decoration: underline; f">{{ config.shop_name }} </h1>
     </header>
     <main>
       <div class="shop-page" id="shop-page1" style="display:block">
-        <h2 style="font-size: 1.5rem; color: green; text-decoration: underline; f">{{ config.shop_name }} </h2>
       <div id="inv-top">
         <div style="margin: 10px; width: 20%">
           <div class="inv-button" onclick="openInvForm()">
@@ -123,7 +126,7 @@
                 <th>UPC/EAN</th>
                 <th>DESCRIPTION</th>
                 <th>STOCK</th>
-                <th>PRICE ({{currency}})</th>
+                <th>PRICE ({{config.currency}})</th>
                 <th>ACTION</th>
               </tr>
             </thead>
@@ -315,10 +318,126 @@
         </table>
       </div>
     </div>
+    <div class="shop-page" id="shop-page6" style="display:none">
+      <div style="width: 50%">
+        <h2><u>Report Expenditure</u></h2>
+        <form id="expForm">
+          <input
+          type="hidden"
+          name="user_unique_id"
+          value="{{config.user_unique_id}}"
+          style="border: none"
+          required
+        />
+
+        <input
+          type="hidden"
+          name="shop_key"
+          value="{{config.shop_key}}"
+          style="border: none"
+          required
+        />
+
+          <input
+            type="hidden"
+            id="reporter2"
+            name="reporter"
+            value="{{client.name}}"
+            style="border: none"
+            required
+          />
+
+          <input
+            type="hidden"
+            id="shop2"
+            name="location"
+            value="{{config.shop_name}}"
+            style="border: none"
+            required
+          />
+
+          <label for="category">Category:</label>
+          <select id="category" name="category" required>
+            <option value="office">Office</option>
+            <option value="travel">Travel</option>
+            <option value="supplies">Supplies</option>
+            <option value="food">Lunch</option>
+            <option value="other">Other</option></select
+          ><br /><br />
+
+          <label for="expense-description">Expense Description:</label
+          ><br />
+          <textarea
+            id="expense-description"
+            name="description"
+            style="height: 25vh; width: 45vw"
+            placeholder="Describe the expenditure"
+            required
+          ></textarea
+          ><br /><br />
+
+          <label for="amount">Amount:</label>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            step="0.01"
+            placeholder="Enter amount"
+            required
+          /><br /><br />
+
+          <button type="submit">Submit Expenditure</button>
+        </form>
+      </div>
+    </div>
     </main>
     <footer><p>&copy; 2024 Dartfox.org. All rights reserved.</p></footer>
     <script src="{{url_for('static', filename="script.js")}}"></script>
     <script>
+        //_________________________RECORD EXPENDITURE___________________________
+        document
+        .getElementById("expForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // Prevent the default form submission
+
+          // Get the form data
+          const formData = new FormData(event.target);
+
+          // Convert the form data to an object
+          const data = {};
+          formData.forEach((value, key) => {
+            data[key] = value;
+          });
+
+          // Send the form data to the server using fetch
+          fetch("/report_expenditure", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              }
+              throw new Error("Network response was not ok.");
+            })
+            .then((data) => {
+              alert(data.message);
+              // Clear the form fields
+              event.target.reset();
+            })
+            .catch((error) => {
+              console.error(
+                "There was a problem with the fetch operation:",
+                error
+              );
+              alert("There was an error submitting the report.");
+            });
+        });
+
+
       function deleteUser(userUniqueId, shopKey, shopPassword, userName, userUsername) {
         // Show a confirmation prompt to the user
         let confirmation = confirm(`Are you sure you want to delete user ${userName} (${userUsername})?`);
@@ -436,14 +555,15 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Inventory updated successfully.');
+                alert('Inventory updated successfully. See activity log for transaction progress.');
+                location.reload();
             } else {
                 alert(data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while updating inventory.');
+            alert('To update only PRICE, quantity must be set to zero(0).');
         });
     }
 
